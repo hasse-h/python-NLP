@@ -1,0 +1,139 @@
+#A very simple Python 3 program in Colab research code that compares the similarity of two documents, A and B
+#by first taking 100 most frequent words from document A (with uninformative words filtered out)
+#and by then by calculating the percentage of these words in the top 1000 words of B and outputting the percentage value
+
+#the program can easily be expanded to analyse the similarity of any number of documents: this is an assigment for my students
+
+
+from operator import itemgetter
+from google.colab import drive
+
+drive.mount('/content/drive', force_remount=True)
+document_a = open('drive/My Drive/Kafka.txt')
+document_b = open('drive/My Drive/Crime.txt')
+top1000 = open('drive/My Drive/1-1000.txt')
+
+excluded = []
+for line in top1000:
+ split = line.split()
+ for word in split:
+   if word not in excluded:
+     excluded.append(word)
+
+def counts_analyzer(document):
+
+  global counts_dict
+  counts_dict = dict()
+  for line in document:
+    split = line.split()
+    for word in split:
+      word = word.replace("won't",'')
+      word = word.replace("n't",'')
+      word = word.replace("n’t",'')
+      word = word.replace(',','')
+      word = word.replace(',','')
+      word = word.replace('.','')
+      word = word.replace('"','')
+      word = word.replace('"','')
+      word = word.replace('“','')
+      word = word.replace('”','')
+      word = word.replace('!','')
+      word = word.replace(';','')
+      word = word.replace('?','')
+      word = word.replace(':','')
+      word = word.replace("'m",'')
+      word = word.replace("’m",'')
+      word = word.replace("'s",'')
+      word = word.replace("’s",'')
+      word = word.replace("'d",'')
+      word = word.replace("’d",'')
+      word = word.replace("'ve",'')
+      word = word.replace("’ve",'')
+      word = word.replace("'ll",'')
+      word = word.replace("’ll",'')
+      word = word.replace("'I",'')
+      word = word.replace("’I",'')
+      word = word.replace("'t",'')
+      word = word.replace("’t",'')
+      word = word.replace("'re",'')
+      word = word.replace("’re",'')
+      word = word.replace('—','')
+      word = word.replace('-','')
+
+    if word.lower() in excluded or word.upper() in excluded:
+      pass
+    elif (word == ''):
+      pass
+    elif word not in counts_dict:
+      counts_dict[word] = 1
+    else: 
+      counts_dict[word] += 1
+  return counts_dict
+
+def ranks_analyzer(document):
+
+  counts_for_sorting = counts_analyzer(document).items()
+  sorted_counts = sorted(counts_for_sorting, key=itemgetter(1), reverse=True)
+
+  counts2flat = []
+  for item in sorted_counts:
+    item = list(item)
+    counts2flat.append(item)
+
+  flat_counts = []
+  for sublist in counts2flat:
+    for item in sublist:
+      flat_counts.append(item)
+
+  global counts_list
+  counts_list = flat_counts[1::2]
+
+  global words_list
+  words_list = flat_counts[::2]
+
+  global ranks_list
+  ranks_list = []
+
+  i = 1
+  for item in counts_list:
+    ranks_list.append(i)
+    i = i+1
+  
+  ranks_dict = dict(zip(counts_list, ranks_list))
+
+  return ranks_dict
+
+#3) #top 100 words of each text
+
+def top100_words(ranks):
+  top100words = []
+  i = 0
+  for key, value in ranks.items():
+    for k, v in counts_dict.items():
+      if key == v and i <100:
+        top100words.append(k)
+        i = i+1
+  return top100words
+
+top100_b = top100_words(ranks_analyzer(document_b))
+top100_a = top100_words(ranks_analyzer(document_a))
+
+#sum of the counts of top 100 words of A in B
+
+top100counts = []
+i = 0
+for key, value in counts_dict.items():
+  for word in top100_b:
+    if key == word and i < 100:
+      top100counts.append(value)
+      i = i+1
+sum_top100_a_in_b = sum(top100counts)
+
+#4) #sum of the counts of top 1000 words in B
+sum_top1000_b = sum(counts_list)
+
+#5) the similarity of b to a in % value
+similarity = (sum_top100_a_in_b / sum_top1000_b)
+simil_percentage = "{:.0%}".format(similarity)
+print()
+print(simil_percentage)
